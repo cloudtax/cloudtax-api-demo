@@ -224,7 +224,7 @@ export default function PersonalInfoForm({ userData }: { userData: UserData }) {
               htmlFor="addressLine1"
               className="block text-sm font-medium text-gray-700"
             >
-              Address Line 1
+              C/O
             </label>
             <input
               id="addressLine1"
