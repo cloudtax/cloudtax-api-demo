@@ -104,7 +104,7 @@ interface PersonalInfo {
 }
 
 interface MailingAddress {
-  address_line_1?: string;
+  address_line_1?: string; // Care of (c/o) line
   unit_no: string;
   street_name: string;
   city: string;
