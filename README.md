@@ -262,6 +262,145 @@ To obtain your `CLIENT_ID` and `CLIENT_SECRET`:
 
 ---
 
+## Webhook Integration
+
+CloudTax can send real-time notifications to your application when important events occur, such as when a tax return is created or when its status changes. This allows you to keep your database synchronized with CloudTax without polling.
+
+### Supported Webhook Events
+
+#### 1. Tax Return Created (`t1_return.created`)
+
+Fired when a user creates a new tax return through CloudTax.
+
+```typescript
+{
+  "type": "t1_return.created",
+  "id": "evt_1234567890",
+  "created": 1642550400,
+  "user": {
+    "external_id": "user-uuid-from-your-system",
+    "id": "cloudtax-user-id",
+    "email": "user@example.com"
+  },
+  "t1_return": {
+    "id": "return_abc123",
+    "year": 2025
+  }
+}
+```
+
+#### 2. Tax Return Status Changed (`t1_return.status_changed`)
+
+Fired when the status of a tax return changes (e.g., from "created" to "in_progress", or "submitted" to "rejected").
+
+```typescript
+{
+  "type": "t1_return.status_changed",
+  "id": "evt_0987654321",
+  "created": 1642636800,
+  "user": {
+    "external_id": "user-uuid-from-your-system",
+    "id": "cloudtax-user-id",
+    "email": "user@example.com"
+  },
+  "t1_return": {
+    "id": "return_abc123",
+    "year": 2025,
+    "old_status": "created",
+    "new_status": "in_progress"
+  }
+}
+```
+#### Tax Return Status Values
+
+The following status values are possible for a tax return:
+
+| Status | Description |
+|--------|-------------|
+| `created` | Tax return has been created but not yet started |
+| `in_progress` | User is actively filling out the tax return |
+| `submitted` | Tax return has been submitted for processing |
+| `rejected` | Tax return submission was rejected and needs to be revised |
+### Webhook Endpoint
+
+The application exposes a webhook endpoint at:
+
+```
+POST https://yourdomain.com/api/webhook
+```
+
+### Security: HMAC-SHA256 Signature Verification
+
+All webhook payloads are cryptographically signed using HMAC-SHA256 with your `CLIENT_SECRET`. The signature is transmitted in the `X-Signature` header.
+
+#### Signature Verification Process
+
+```typescript
+const signature = createHmac('sha256', CLIENT_SECRET)
+  .update(rawBody)
+  .digest('hex');
+
+// CloudTax sends this in the X-Signature header
+// Your endpoint verifies it matches before processing
+```
+
+#### How the Webhook Endpoint Works
+
+When CloudTax sends a webhook to `/api/webhook`, the application automatically:
+
+1. **Verifies the signature**: Validates the HMAC-SHA256 signature using your `CLIENT_SECRET`
+2. **Rejects invalid requests**: Returns 401 Unauthorized for requests with invalid or missing signatures
+3. **Parses the payload**: Validates the JSON event payload structure
+4. **Finds the user**: Matches the `external_id` from the webhook to the corresponding user in your database
+5. **Saves the data**: Creates or updates the tax return record in the `tax_returns` table
+6. **Acknowledges receipt**: Returns `{ "received": true }` so CloudTax knows the webhook was processed
+
+### Configuring Webhooks in CloudTax
+
+To start receiving webhooks:
+
+1. Log in to your CloudTax Partner Portal
+2. Navigate to **Settings** → **Integration**
+3. Scroll to the **Event Notifications** section
+4. Enter your webhook URL: `https://yourdomain.com/api/webhook`
+
+![Webhook Settings Screenshot](docs/images/webhook-settings-placeholder.png)
+*Screenshot placeholder: The Integration settings page showing webhook URL configuration*
+
+> **Important**: Ensure your webhook endpoint is publicly accessible over HTTPS. CloudTax will not send webhooks to localhost or HTTP endpoints in production.
+
+### Testing Webhooks
+
+You can test webhook delivery from the CloudTax Partner Portal:
+
+1. Navigate to **Settings** → **Integration**
+2. Find the **Event Notifications** section
+3. Click **Send Test Event** to trigger a sample webhook
+4. Check your application logs to verify receipt
+
+The test webhook will send a `webhook.test` event with the following payload:
+
+```typescript
+{
+  "type": "webhook.test",
+  "id": "evt_test_uuid",
+  "created": 1642550400
+}
+```
+
+This event is used to verify that your webhook endpoint is properly configured and can receive events from CloudTax. The endpoint will acknowledge the test event and return `{ "received": true }`.
+
+### Webhook Response Codes
+
+Your endpoint should respond with the following status codes:
+
+- **200 OK**: Webhook received and processed successfully
+- **401 Unauthorized**: Invalid signature
+- **400 Bad Request**: Invalid JSON payload or missing required fields
+- **500 Internal Server Error**: Processing error (CloudTax will retry)
+
+---
+
 ## Customizing Logout Behavior
 
 You can customize the logout experience for your users through the CloudTax Partner Portal.

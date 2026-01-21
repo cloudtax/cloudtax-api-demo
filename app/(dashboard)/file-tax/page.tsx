@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type TaxReturn = {
+  id: number;
+  externalReturnId: string;
+  taxYear: number;
+  status: string;
+  lastEventAt: string | null;
+  lastEventType: string;
+};
 
 export default function FileTaxPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [returnsLoading, setReturnsLoading] = useState(true);
+  const [returnsError, setReturnsError] = useState<string | null>(null);
+  const [taxReturns, setTaxReturns] = useState<TaxReturn[]>([]);
 
   const handleFileTax = async () => {
     setLoading(true);
@@ -31,6 +43,112 @@ export default function FileTaxPage() {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchReturns = async () => {
+      try {
+        const response = await fetch("/api/tax-returns");
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          const message = data.error || "Failed to load tax return updates";
+          throw new Error(message);
+        }
+
+        const data = await response.json();
+        if (active) {
+          setTaxReturns(data.taxReturns || []);
+        }
+      } catch (err) {
+        if (active) {
+          setReturnsError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load tax return updates",
+          );
+        }
+      } finally {
+        if (active) {
+          setReturnsLoading(false);
+        }
+      }
+    };
+
+    fetchReturns();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const getStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      created: "Just Created",
+      in_progress: "In Progress",
+      submitted: "Submitted",
+      rejected: "Needs Revision",
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string): string => {
+    const colorMap: Record<string, string> = {
+      created: "text-blue-700",
+      in_progress: "text-amber-700",
+      submitted: "text-green-700",
+      rejected: "text-red-700",
+    };
+    return colorMap[status] || "text-indigo-700";
+  };
+
+  const renderReturnStatus = () => {
+    if (returnsLoading) {
+      return <p className="text-gray-600">Loading your tax return status...</p>;
+    }
+
+    if (returnsError) {
+      return <p className="text-red-600">{returnsError}</p>;
+    }
+
+    if (!taxReturns.length) {
+      return <p className="text-gray-600">No tax return activity yet.</p>;
+    }
+
+    return (
+      <div className="space-y-3">
+        {taxReturns.map((item) => (
+          <div
+            key={item.id}
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 rounded-lg border border-gray-200 p-4"
+          >
+            <div>
+              <p className="text-sm text-gray-500">Tax Year</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {item.taxYear}
+              </p>
+              <p className="text-xs text-gray-500 break-all">
+                Return ID: {item.externalReturnId}
+              </p>
+            </div>
+            <div className="text-left md:text-right">
+              <p className="text-sm text-gray-500">Status</p>
+              <p
+                className={`text-base font-semibold ${getStatusColor(item.status)}`}
+              >
+                {getStatusLabel(item.status)}
+              </p>
+              <p className="text-xs text-gray-500">
+                {item.lastEventAt
+                  ? `Updated ${new Date(item.lastEventAt).toLocaleString()}`
+                  : item.lastEventType}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -157,7 +275,8 @@ export default function FileTaxPage() {
               2025 Tax Year Filing
             </p>
             <p className="text-gray-600">
-              File your 2025 Canadian income tax return. Deadline: April 30, 2026
+              File your 2025 Canadian income tax return. Deadline: April 30,
+              2026
             </p>
           </div>
         </div>
@@ -188,6 +307,25 @@ export default function FileTaxPage() {
             </ul>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Return Updates
+            </h2>
+            <p className="text-sm text-gray-600">
+              Latest activity from your tax filings
+            </p>
+          </div>
+          {!returnsLoading && !returnsError && taxReturns.length > 0 && (
+            <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full">
+              {taxReturns.length} active
+            </span>
+          )}
+        </div>
+        {renderReturnStatus()}
       </div>
 
       {/* Error Message */}

@@ -37,7 +37,31 @@ export const personalInfo = sqliteTable("personal_info", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+export const taxReturns = sqliteTable("tax_returns", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  externalReturnId: text("external_return_id").notNull().unique(),
+  taxYear: integer("tax_year").notNull(),
+  status: text("status").notNull(),
+  lastEventType: text("last_event_type").notNull(),
+  lastEventId: text("last_event_id").notNull(),
+  lastEventAt: text("last_event_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  payload: text("payload", { mode: "json" }).$type<Record<string, unknown>>(),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type PersonalInfo = typeof personalInfo.$inferSelect;
 export type NewPersonalInfo = typeof personalInfo.$inferInsert;
+export type TaxReturn = typeof taxReturns.$inferSelect;
+export type NewTaxReturn = typeof taxReturns.$inferInsert;
