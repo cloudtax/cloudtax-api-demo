@@ -2,6 +2,27 @@
 
 This is a [Next.js](https://nextjs.org) application integrated with CloudTax API for Canadian tax filing.
 
+## Table of Contents
+
+- [Setup](#setup)
+  - [1. Install Dependencies](#1-install-dependencies)
+  - [2. Initialize Database](#2-initialize-database)
+  - [3. Configure Environment Variables](#3-configure-environment-variables)
+  - [4. Start the Development Server](#4-start-the-development-server)
+- [CloudTax API Integration](#cloudtax-api-integration)
+  - [Tax Login URL API](#tax-login-url-api)
+  - [Legacy Authentication with Basic Auth](#legacy-authentication-with-basic-auth)
+- [Getting API Credentials](#getting-api-credentials)
+- [Webhook Integration](#webhook-integration)
+  - [Supported Webhook Events](#supported-webhook-events)
+  - [Webhook Endpoint](#webhook-endpoint)
+  - [Security: HMAC-SHA256 Signature Verification](#security-hmac-sha256-signature-verification)
+  - [Configuring Webhooks in CloudTax](#configuring-webhooks-in-cloudtax)
+  - [Testing Webhooks](#testing-webhooks)
+  - [Webhook Response Codes](#webhook-response-codes)
+- [Customizing Logout Behavior](#customizing-logout-behavior)
+- [Learn More](#learn-more)
+
 ## Setup
 
 Follow these steps to set up the application:
@@ -437,11 +458,4 @@ To learn more about the technologies used in this project:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API
 - [CloudTax API Documentation](https://cloudtax.readme.io/reference/api) - CloudTax API reference
 - [Drizzle ORM](https://orm.drizzle.team/) - TypeScript ORM used in this project
-
----
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
-
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+\
